@@ -1,0 +1,151 @@
+= Operators Workshop
+
+== Operator SDK - Helm
+
+We will build a Helm Chart based operator for managing Nginx deployments on OpenShift.
+
+TIP: Make sure to replace <USERNAME> with your personal username. Otherwise we will have a namepsace collision on the cluster as CRD are clusterwide  
+
+Change to the directory /opt/app-root/src/redhat (Create the directory if necessary).
+
+Make sure the operator-sdk is available
+----
+$ operator-sdk version
+----
+
+Now using the sdk create a new scaffold project for a Helm Chart based Operator.
+
+As we are all using the same cluster, we will create a namespace scoped Operator :
+
+----
+$ operator-sdk new nginx-operator \
+  --api-version=<USERNAME>/v1alpha1 \
+  --kind=Nginx \
+  --type=helm
+$ cd nginx-operator
+----
+
+This creates the nginx-operator project specifically for watching the Nginx resource with APIVersion <USERNAME>/v1alpha1 and Kind Nginx.
+
+For this example, the nginx-operator executes the following reconciliation logic for each Nginx Custom Resource (CR):
+
+* Create a Nginx Deployment if it does not exist.
+* Create a Nginx Service if it does not exist.
+* Create a Nginx Ingress if it is enabled and does not exist.
+* Ensure that the Deployment, Service, and optional Ingress match the desired configuration (for example, replica count, image, service type) as specified by the Nginx CR.
+
+Take some time to look at the created files, especially the Helm Chart Templates 
+
+=== Customize the CR (Custom Resource)
+Set the inital Nginx replicaCount of for the operator to 2 and the Port to 8080 in deploy/crds/<USERNAME>_v1alpha1_nginx_cr.yaml
+
+=== Switch to the latest Helm-Operator Image
+The SDK uses the same Image as its own version which needs to be updated.
+
+In deploy/Dockerfile change the FROM Image version to helm-operator:latest  
+
+=== Deploy the CRD to OpenShift (Custom Resource Definition)
+
+----
+$ oc create -f deploy/crds/example_v1alpha1_nginx_crd.yaml
+----
+
+=== Build an run the operator
+Normally you could run the operator directly on your laptop but as our environment is running in a container we cannot do that due to network constraints.
+
+So we will deploy the Operator directly to the cluster.
+
+TIP: Make sure you have set up an account in https://quay.io
+
+Login to Quay.io with Podman, replacing your credentials
+----
+podman login -u <QUAY_USERNAME> -p <QUAYPASSWORD> quay.io
+----
+
+Then build the operator image locally
+----
+$ operator-sdk build quay.io/<QUAYUSERNAME>/nginx-operator:v0.0.1
+----
+
+Now push the image to quay.io
+
+----
+$ podman push quay.io/<QUAY_USERNAME>/nginx-operator:v0.0.1
+----
+
+Now replace the REPLACE_IMAGE placeholder in the operator manifest with your image
+
+----
+$ sed -i 's|REPLACE_IMAGE|quay.io/<QUAY_USERNAME>/nginx-operator:v0.0.1|g' deploy/operator.yaml
+----
+
+Now deploy the account, role, rolebinding and operator 
+
+----
+$ oc create -f deploy/service_account.yaml
+$ oc create -f deploy/role.yaml
+$ oc create -f deploy/role_binding.yaml
+$ oc create -f deploy/operator.yaml
+----
+
+Check that the operator is running
+----
+$ oc get deployment
+----
+
+=== Now deploy an Cluster Instance of your Nginx Operator
+
+----
+$ oc apply -f deploy/crds/<QUAY_USERNAME>_v1alpha1_nginx_cr.yaml
+----
+
+Check what is happening in your namespace
+----
+$ oc get pods -w
+----
+
+You should see the Operator trying to scale up to two pods but they are crashing.
+
+See if you can find out what is happening
+
+TIP: This related to the nginx Image and the security model of OpenShift vs. plain Kubernetes
+
++++ <details><summary> +++
+*>> _Click here for the solution_ <<*
++++ </summary><div> +++
+
+The standard Nginx Image requires root privileges which is not allowed in OpenShift due to security constraints.
+
+Change the CR to use nginxinc/nginx-unprivileged as base image and update your CR
+
+----
+$ oc apply -f deploy/crds/<QUAY_USERNAME>_v1alpha1_nginx_cr.yaml
+----
+
+
++++ </div></details> +++
+
+Now Update your Operator Cluster to use 3 instead of two NGinx Instances
+
++++ <details><summary> +++
+*>> _Click here for the solution_ <<*
++++ </summary><div> +++
+
+
+
+Change the CR and update the replica count to 3 and the update it
+
+----
+$ oc apply -f deploy/crds/<QUAY_USERNAME>_v1alpha1_nginx_cr.yaml
+----
+
+
++++ </div></details> +++
+
+Check that you have 3 Nginx pods running
+
+
+----
+$ oc get pods -w
+----
+
