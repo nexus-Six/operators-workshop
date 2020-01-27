@@ -17,11 +17,9 @@ Now using the sdk create a new scaffold project for a Helm Chart based Operator.
 
 As we are all using the same cluster, we will create a namespace scoped Operator :
 
+TIP: The <USERNAME> in the following command needs to start with an uppercase letter 
 ----
-$ operator-sdk new nginx-operator \
-  --api-version=<USERNAME>/v1alpha1 \
-  --kind=<USERNAME>-Nginx \
-  --type=helm
+$ operator-sdk new nginx-operator --api-version=<USERNAME>.operatortraining.com/v1alpha1 --kind=<USERNAME>Nginx --type=helm
 $ cd nginx-operator
 ----
 
@@ -37,17 +35,17 @@ For this example, the nginx-operator executes the following reconciliation logic
 Take some time to look at the created files, especially the Helm Chart Templates 
 
 === Customize the CR (Custom Resource)
-Set the inital Nginx replicaCount of for the operator to 2 and the Port to 8080 in deploy/crds/<USERNAME>_v1alpha1_nginx_cr.yaml
+Set the initial Nginx replicaCount of for the operator to 2 and the Port to 8080 in deploy/crds/<USERNAME>_v1alpha1_nginx_cr.yaml
 
 === Switch to the latest Helm-Operator Image
 The SDK uses the same Image as its own version which needs to be updated.
 
-In deploy/Dockerfile change the FROM Image version to helm-operator:latest  
+In build/Dockerfile change the FROM Image version to helm-operator:latest  
 
 === Deploy the CRD to OpenShift (Custom Resource Definition)
 
 ----
-$ oc create -f deploy/crds/example_v1alpha1_nginx_crd.yaml
+$ oc create -f deploy/crds/<USERNAME>_v1alpha1_nginx_crd.yaml
 ----
 
 === Build an run the operator
@@ -96,7 +94,7 @@ $ oc get deployment
 === Now deploy an Cluster Instance of your Nginx Operator
 
 ----
-$ oc apply -f deploy/crds/<QUAY_USERNAME>_v1alpha1_nginx_cr.yaml
+$ oc apply -f deploy/crds/<USERNAME>_v1alpha1_nginx_cr.yaml
 ----
 
 Check what is happening in your namespace
@@ -108,7 +106,7 @@ You should see the Operator trying to scale up to two pods but they are crashing
 
 See if you can find out what is happening
 
-TIP: This related to the nginx Image and the security model of OpenShift vs. plain Kubernetes
+TIP: This related to the used standard Nginx Image and the security model of OpenShift vs. plain Kubernetes. I there another Nginx image that is better suited for OpenShift?
 
 +++ <details><summary> +++
 *>> _Click here for the solution_ <<*
@@ -119,7 +117,7 @@ The standard Nginx Image requires root privileges which is not allowed in OpenSh
 Change the CR to use nginxinc/nginx-unprivileged as base image and update your CR
 
 ----
-$ oc apply -f deploy/crds/<QUAY_USERNAME>_v1alpha1_nginx_cr.yaml
+$ oc apply -f deploy/crds/<USERNAME>_v1alpha1_nginx_cr.yaml
 ----
 
 
