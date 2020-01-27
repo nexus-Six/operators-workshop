@@ -4,7 +4,7 @@
 
 We will build a Helm Chart based operator for managing Nginx deployments on OpenShift.
 
-TIP: Make sure to replace <USERNAME> with your personal username. Otherwise we will have a namepsace collision on the cluster as CRD are clusterwide  
+TIP: Make sure to replace <USERNAME> with your Openshift username. Otherwise we will have a namepsace collision on the cluster as CRD are clusterwide  
 
 Change to the directory /opt/app-root/src/redhat (Create the directory if necessary).
 
@@ -20,7 +20,7 @@ As we are all using the same cluster, we will create a namespace scoped Operator
 ----
 $ operator-sdk new nginx-operator \
   --api-version=<USERNAME>/v1alpha1 \
-  --kind=Nginx \
+  --kind=<USERNAME>-Nginx \
   --type=helm
 $ cd nginx-operator
 ----
