@@ -37,10 +37,13 @@ Take some time to look at the created files, especially the Helm Chart Templates
 === Customize the CR (Custom Resource)
 Set the initial Nginx replicaCount of for the operator to 2 and the Port to 8080 in deploy/crds/<USERNAME>_v1alpha1_nginx_cr.yaml
 
-=== Switch to the latest Helm-Operator Image
-The SDK uses the same Image as its own version which needs to be updated.
 
-In build/Dockerfile change the FROM Image version to helm-operator:latest  
+=== Change the Port and Health Checks of the Deployment Chart
+Go to helm-charts/<USERNAME>nginx/templates/deployment.yml
+
+And change :
+* *ContainerPort* from *80* to *8080*
+* the *port* in *livenessProbe* and *readyProbe* from *http* to *8080*
 
 === Deploy the CRD to OpenShift (Custom Resource Definition)
 
