@@ -35,8 +35,12 @@ For this example, the nginx-operator executes the following reconciliation logic
 Take some time to look at the created files, especially the Helm Chart Templates 
 
 === Customize the CR (Custom Resource)
-Set the initial Nginx replicaCount of for the operator to 2 and the Port to 8080 in deploy/crds/<USERNAME>_v1alpha1_nginx_cr.yaml
 
+In deploy/crds/<USERNAME>_v1alpha1_nginx_cr.yaml change :
+
+* replicaCount to *2*
+* Port to *8080*
+* Image to *nginxinc/nginx-unprivileged* (The standard nginx requires root privileges)
 
 === Change the Port and Health Checks of the Deployment Chart
 Go to helm-charts/<USERNAME>nginx/templates/deployment.yml
@@ -104,27 +108,6 @@ Check what is happening in your namespace
 ----
 $ oc get pods -w
 ----
-
-You should see the Operator trying to scale up to two pods but they are crashing.
-
-See if you can find out what is happening
-
-TIP: This related to the used standard Nginx Image and the security model of OpenShift vs. plain Kubernetes. I there another Nginx image that is better suited for OpenShift?
-
-+++ <details><summary> +++
-*>> _Click here for the solution_ <<*
-+++ </summary><div> +++
-
-The standard Nginx Image requires root privileges which is not allowed in OpenShift due to security constraints.
-
-Change the CR to use nginxinc/nginx-unprivileged as base image and update your CR
-
-----
-$ oc apply -f deploy/crds/<USERNAME>_v1alpha1_nginx_cr.yaml
-----
-
-
-+++ </div></details> +++
 
 Now Update your Operator Cluster to use 3 instead of two NGinx Instances
 
